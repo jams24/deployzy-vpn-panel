@@ -4,60 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.PanelName}} — Public page</title>
-<style>
-  :root { color-scheme: dark; }
-  * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:#0b0e14; color:#e6e8eb; }
-  header { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; border-bottom:1px solid #1e2530; }
-  header .brand { font-weight:700; }
-  header nav a, header form button { color:#8a93a2; text-decoration:none; font-size:13px; margin-left:18px; background:none; border:0; cursor:pointer; }
-  main { max-width:620px; margin:0 auto; padding:28px 24px 60px; }
-  h1 { font-size:18px; } .muted { color:#8a93a2; font-size:13px; }
-  .card { border:1px solid #1e2530; border-radius:14px; background:#11151d; padding:20px; margin-top:16px; }
-  label { display:block; font-size:12px; color:#8a93a2; margin:14px 0 6px; }
-  input, select { width:100%; padding:9px 11px; border:1px solid #2a3340; border-radius:9px; background:#0b0e14; color:#e6e8eb; font-size:13px; outline:none; }
-  input:focus, select:focus { border-color:#3b82f6; }
-  .row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
-  .check { display:flex; align-items:center; gap:8px; margin-top:6px; }
-  .check input { width:auto; }
-  button.primary { margin-top:20px; height:40px; padding:0 18px; border:0; border-radius:9px; background:#3b82f6; color:#fff; font-weight:600; cursor:pointer; }
-  .hint { font-size:11px; color:#6b7280; margin-top:8px; }
-</style>
+{{template "styles" .}}
 </head>
 <body>
-  <header>
-    <span class="brand">{{.PanelName}}</span>
-    <nav>
-      <a href="/admin">Servers</a>
-      <a href="/admin/public">Public page</a>
-      <form method="post" action="/logout" style="display:inline"><button>Sign out</button></form>
-    </nav>
-  </header>
-  <main>
-    <h1>Public free-account page</h1>
-    <p class="muted">Let anyone create a free SSH/V2Ray account at your panel's homepage, on the server and terms you choose.</p>
+  {{template "topnav" .}}
+  <div class="wrap wrap-sm">
+    <h1 class="pt">Public free page</h1>
+    <p class="sub">Open a public homepage where anyone can create a free SSH / V2Ray account on the server and terms you choose.</p>
     <div class="card">
       <form method="post" action="/admin/public">
-        <div class="check">
-          <input type="checkbox" id="enabled" name="enabled" {{if .Cfg.Enabled}}checked{{end}}>
-          <label for="enabled" style="margin:0">Enable the public page at <code>/</code></label>
-        </div>
+        <label style="display:flex;align-items:center;gap:10px;margin-top:0;cursor:pointer">
+          <input type="checkbox" name="enabled" {{if .Cfg.Enabled}}checked{{end}} style="width:auto">
+          <span>Enable the public page at your panel's homepage</span>
+        </label>
         <label>Server for free accounts</label>
         <select name="server_id">
           <option value="0">— select a server —</option>
           {{range .Servers}}
-          <option value="{{.ID}}" {{if eq .ID $.Cfg.ServerID}}selected{{end}}>{{.Label}} ({{.IP}})</option>
+          <option value="{{.ID}}" {{if eq .ID $.Cfg.ServerID}}selected{{end}}>{{.Label}} ({{if .IP}}{{.IP}}{{else}}{{.Host}}{{end}})</option>
           {{end}}
         </select>
-        <div class="row">
+        <div class="grid g3">
           <div><label>Days per account</label><input name="days" value="{{.Cfg.Days}}"></div>
           <div><label>Max logins</label><input name="max_logins" value="{{.Cfg.MaxLogins}}"></div>
           <div><label>Per-IP / day</label><input name="per_ip_daily" value="{{.Cfg.PerIPDaily}}"></div>
         </div>
-        <div class="hint">Only servers you've already installed appear above. Free accounts are created on that server via TunnelTweak.</div>
-        <button class="primary" type="submit">Save</button>
+        <p class="muted fs12" style="margin-top:10px">Only servers you've installed appear above. Free accounts are created on that server.</p>
+        <button class="btn" type="submit" style="margin-top:6px">Save</button>
       </form>
     </div>
-  </main>
+  </div>
 </body>
 </html>

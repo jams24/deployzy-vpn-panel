@@ -1,0 +1,90 @@
+{{define "styles"}}
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#080a10; --bg2:#0d1119; --panel:#111725; --panel2:#0c111c;
+    --border:#1d2637; --border2:#2a3547;
+    --text:#eaeef5; --muted:#8b97ab; --faint:#5c6b82;
+    --brand1:#6d8bff; --brand2:#8b5cf6; --accent:#22d3ee;
+    --ok:#34d399; --okbg:#0e2a20; --warn:#fbbf24; --bad:#fb7185;
+    --grad:linear-gradient(135deg,#6d8bff 0%,#8b5cf6 60%,#c084fc 100%);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(139,92,246,.16), transparent 60%),
+      radial-gradient(800px 500px at 0% 0%, rgba(109,139,255,.14), transparent 55%),
+      var(--bg);
+    color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  .topbar{position:sticky;top:0;z-index:20;backdrop-filter:blur(12px);
+    background:rgba(9,12,20,.72);border-bottom:1px solid var(--border);}
+  .topbar .in{max-width:1040px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:14px 22px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.01em;font-size:16px}
+  .brand .dot{width:26px;height:26px;border-radius:8px;background:var(--grad);box-shadow:0 4px 14px rgba(124,92,246,.45)}
+  .nav{display:flex;align-items:center;gap:6px}
+  .nav a,.nav button{font-size:13px;color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:9px;border:0;background:none;cursor:pointer;font-family:inherit}
+  .nav a:hover,.nav button:hover{color:var(--text);background:rgba(255,255,255,.05)}
+  .nav a.active{color:var(--text);background:rgba(109,139,255,.14)}
+  .wrap{max-width:1040px;margin:0 auto;padding:26px 22px 70px}
+  .wrap-sm{max-width:560px}
+  h1.pt{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:6px 0 2px}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+  .sect{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:26px 0 12px;font-weight:600}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:16px;padding:20px}
+  .card+.card{margin-top:14px}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:repeat(2,1fr)} .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:720px){.g2,.g3{grid-template-columns:1fr}}
+  .muted{color:var(--muted)} .fs12{font-size:12px} .fs13{font-size:13px}
+  label{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px;font-weight:500}
+  input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;background:#0a0e17;color:var(--text);font-size:13px;outline:none;font-family:inherit;transition:border-color .15s,box-shadow .15s}
+  input:focus,select:focus,textarea:focus{border-color:var(--brand1);box-shadow:0 0 0 3px rgba(109,139,255,.15)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 18px;border:0;border-radius:11px;font-weight:650;font-size:14px;cursor:pointer;font-family:inherit;color:#fff;background:var(--grad);box-shadow:0 6px 18px rgba(124,92,246,.32);transition:transform .1s,filter .15s}
+  .btn:hover{filter:brightness(1.07)} .btn:active{transform:translateY(1px)}
+  .btn.block{width:100%}
+  .btn.ghost{background:none;border:1px solid var(--border2);color:var(--muted);box-shadow:none}
+  .btn.ghost:hover{color:var(--text);border-color:var(--brand1)}
+  .btn.sm{height:34px;padding:0 12px;font-size:12px;border-radius:9px}
+  .chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid var(--border2);color:var(--muted)}
+  .chip.ok{color:var(--ok);border-color:#1c5842;background:rgba(52,211,153,.08)}
+  .chip.warn{color:var(--warn);border-color:#5c451a}
+  .chip.bad{color:var(--bad);border-color:#5c2130}
+  .alert{padding:11px 14px;border-radius:11px;font-size:13px;margin-bottom:14px}
+  .alert.err{border:1px solid #5c2130;background:rgba(251,113,133,.1);color:#fda4af}
+  .alert.ok{border:1px solid #1c5842;background:rgba(52,211,153,.1);color:#6ee7b7}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border)}
+  td{padding:10px;border-bottom:1px solid rgba(29,38,55,.6);vertical-align:middle}
+  tr:last-child td{border-bottom:0}
+  code{font-family:ui-monospace,Menlo,monospace}
+  .spec{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:7px 12px;border-radius:9px;background:#0a0e17;border:1px solid var(--border);font-size:12.5px;margin-top:7px}
+  .spec .k{color:var(--muted)} .spec .v{font-weight:600;font-family:ui-monospace,Menlo,monospace}
+  .inline{display:inline;margin:0}
+</style>
+{{end}}
+
+{{define "topnav"}}
+<div class="topbar"><div class="in">
+  <a class="brand" href="/admin" style="text-decoration:none"><span class="dot"></span>{{.PanelName}}</a>
+  <nav class="nav">
+    <a href="/admin" class="{{if eq .Active "servers"}}active{{end}}">Servers</a>
+    <a href="/admin/public" class="{{if eq .Active "public"}}active{{end}}">Public page</a>
+    <form method="post" action="/logout" class="inline"><button>Sign out</button></form>
+  </nav>
+</div></div>
+{{end}}
+
+{{define "serverspecs"}}
+{{/* expects a *Server as . */}}
+<div class="spec"><span class="k">Host</span><span class="v">{{if .IP}}{{.IP}}{{else}}{{.Host}}{{end}}</span></div>
+{{with index .Ports "direct"}}<div class="spec"><span class="k">OpenSSH / Dropbear</span><span class="v">{{.}}</span></div>{{end}}
+{{with index .Ports "ssl"}}<div class="spec"><span class="k">SSL / TLS</span><span class="v">{{.}}</span></div>{{end}}
+{{with index .Ports "http"}}<div class="spec"><span class="k">WebSocket (HTTP)</span><span class="v">{{.}}</span></div>{{end}}
+{{if .V2Ray}}<div class="spec"><span class="k">V2Ray · {{.V2Ray.Protocol}}{{if .V2Ray.Security}} / {{.V2Ray.Security}}{{end}}</span><span class="v">{{.V2Ray.Port}}</span></div>{{end}}
+{{if .CDNDomain}}<div class="spec"><span class="k">CDN (Cloudflare)</span><span class="v">{{.CDNDomain}}</span></div>{{end}}
+{{if .DNSTT}}{{if .DNSTT.Domain}}<div class="spec"><span class="k">DNSTT</span><span class="v">{{.DNSTT.Domain}}</span></div>{{end}}{{end}}
+{{end}}

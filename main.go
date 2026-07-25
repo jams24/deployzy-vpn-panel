@@ -116,9 +116,11 @@ func main() {
 	mux.HandleFunc("POST /admin/servers", app.guard(app.handleInstallServer))
 	mux.HandleFunc("GET /admin/servers/{id}", app.guard(app.handleServerDetail))
 	mux.HandleFunc("POST /admin/servers/{id}/delete", app.guard(app.handleDeleteServer))
+	mux.HandleFunc("POST /admin/servers/{id}/restart", app.guard(app.handleRestartServer))
 	mux.HandleFunc("POST /admin/servers/{id}/users", app.guard(app.handleCreateUser))
 	mux.HandleFunc("POST /admin/users/{id}/delete", app.guard(app.handleDeleteUser))
 	mux.HandleFunc("POST /admin/users/{id}/renew", app.guard(app.handleRenewUser))
+	mux.HandleFunc("POST /admin/users/{id}/limit", app.guard(app.handleSetUserLimit))
 	mux.HandleFunc("GET /admin/jobs/{id}", app.guard(app.handleJobStatus))
 	mux.HandleFunc("GET /admin/public", app.guard(app.handlePublicConfigForm))
 	mux.HandleFunc("POST /admin/public", app.guard(app.handlePublicConfigSave))
@@ -227,7 +229,7 @@ func (a *App) handleLogout(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) handleAdmin(w http.ResponseWriter, r *http.Request) {
 	servers, err := a.tut.ListServers(r.Context())
-	data := map[string]any{"Servers": servers, "Public": a.store.Public()}
+	data := map[string]any{"Servers": servers, "Public": a.store.Public(), "Active": "servers"}
 	if err != nil {
 		data["Error"] = err.Error()
 	}
@@ -270,7 +272,7 @@ func (a *App) renderServerPage(w http.ResponseWriter, r *http.Request, id int, e
 	cfg, _ := a.tut.ServerConfig(r.Context(), id)
 	data := map[string]any{
 		"Server": srv, "Users": users, "Config": cfg,
-		"JobID": r.URL.Query().Get("job"),
+		"JobID": r.URL.Query().Get("job"), "Active": "servers",
 	}
 	for k, v := range extra {
 		data[k] = v
@@ -325,6 +327,28 @@ func (a *App) handleRenewUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
 }
 
+func (a *App) handleSetUserLimit(w http.ResponseWriter, r *http.Request) {
+	uid, _ := strconv.Atoi(r.PathValue("id"))
+	ml, _ := strconv.Atoi(r.FormValue("max_logins"))
+	if ml < 1 {
+		ml = 1
+	}
+	a.tut.SetUserLimit(r.Context(), uid, ml)
+	http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
+}
+
+func (a *App) handleRestartServer(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.PathValue("id"))
+	err := a.tut.RestartServer(r.Context(), id)
+	extra := map[string]any{}
+	if err != nil {
+		extra["Error"] = err.Error()
+	} else {
+		extra["Notice"] = "Services restarted."
+	}
+	a.renderServerPage(w, r, id, extra)
+}
+
 func (a *App) handleJobStatus(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(r.PathValue("id"))
 	job, err := a.tut.GetJob(r.Context(), id)
@@ -337,7 +361,7 @@ func (a *App) handleJobStatus(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) handlePublicConfigForm(w http.ResponseWriter, r *http.Request) {
 	servers, _ := a.tut.ListServers(r.Context())
-	a.render(w, "public_config.html", map[string]any{"Cfg": a.store.Public(), "Servers": servers})
+	a.render(w, "public_config.html", map[string]any{"Cfg": a.store.Public(), "Servers": servers, "Active": "public"})
 }
 
 func (a *App) handlePublicConfigSave(w http.ResponseWriter, r *http.Request) {
@@ -369,7 +393,8 @@ func (a *App) handleRoot(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	a.render(w, "public.html", map[string]any{"Cfg": cfg})
+	srv, _ := a.tut.GetServer(r.Context(), cfg.ServerID)
+	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv})
 }
 
 func (a *App) handleFreeCreate(w http.ResponseWriter, r *http.Request) {
@@ -378,8 +403,9 @@ func (a *App) handleFreeCreate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Free accounts are not available.", 403)
 		return
 	}
+	srv, _ := a.tut.GetServer(r.Context(), cfg.ServerID)
 	if !a.ipAllow(clientIP(r), cfg.PerIPDaily) {
-		a.render(w, "public.html", map[string]any{"Cfg": cfg, "Error": "Daily limit reached from your network. Try again tomorrow."})
+		a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Error": "Daily limit reached from your network. Try again tomorrow."})
 		return
 	}
 	user, err := a.tut.CreateUser(r.Context(), cfg.ServerID, CreateUserReq{
@@ -389,10 +415,10 @@ func (a *App) handleFreeCreate(w http.ResponseWriter, r *http.Request) {
 		MaxLogins: cfg.MaxLogins,
 	})
 	if err != nil {
-		a.render(w, "public.html", map[string]any{"Cfg": cfg, "Error": err.Error()})
+		a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Error": err.Error()})
 		return
 	}
-	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Created": user})
+	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Created": user})
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────

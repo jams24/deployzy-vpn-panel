@@ -293,8 +293,17 @@ func (c *TutBot) RenewUser(ctx context.Context, uid, days int) error {
 	return c.do(ctx, "POST", fmt.Sprintf("/api/v1/users/%d/renew", uid), map[string]int{"days": days}, nil)
 }
 
+func (c *TutBot) SetUserLimit(ctx context.Context, uid, maxLogins int) error {
+	return c.do(ctx, "POST", fmt.Sprintf("/api/v1/users/%d/limit", uid), map[string]int{"max_logins": maxLogins}, nil)
+}
+
 func (c *TutBot) DeleteUser(ctx context.Context, uid int) error {
 	return c.do(ctx, "DELETE", fmt.Sprintf("/api/v1/users/%d", uid), nil, nil)
+}
+
+// RestartServer restarts the VPN services on a server.
+func (c *TutBot) RestartServer(ctx context.Context, id int) error {
+	return c.do(ctx, "POST", fmt.Sprintf("/api/v1/servers/%d/restart", id), nil, nil)
 }
 
 type ServerConfig struct {

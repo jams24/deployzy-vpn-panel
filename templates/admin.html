@@ -4,102 +4,72 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.PanelName}} — Servers</title>
-<style>
-  :root { color-scheme: dark; }
-  * { box-sizing:border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:#0b0e14; color:#e6e8eb; }
-  header { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; border-bottom:1px solid #1e2530; }
-  header .brand { font-weight:700; }
-  header nav a, header form button { color:#8a93a2; text-decoration:none; font-size:13px; margin-left:18px; background:none; border:0; cursor:pointer; }
-  header nav a:hover { color:#e6e8eb; }
-  main { max-width:920px; margin:0 auto; padding:28px 24px 60px; }
-  h2 { font-size:15px; margin:28px 0 12px; }
-  .card { border:1px solid #1e2530; border-radius:14px; background:#11151d; padding:20px; margin-bottom:16px; }
-  .srv { display:flex; align-items:center; justify-content:space-between; }
-  .srv a { color:#e6e8eb; text-decoration:none; font-weight:600; }
-  .srv a:hover { color:#3b82f6; }
-  .muted { color:#8a93a2; font-size:12px; }
-  .badge { font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid #2a3340; }
-  .ok { color:#34d399; border-color:#065f46; }
-  .warn { color:#fbbf24; border-color:#78350f; }
-  .bad { color:#fca5a5; border-color:#7f1d1d; }
-  label { display:block; font-size:12px; color:#8a93a2; margin:12px 0 6px; }
-  input, select, textarea { width:100%; padding:9px 11px; border:1px solid #2a3340; border-radius:9px; background:#0b0e14; color:#e6e8eb; font-size:13px; outline:none; font-family:inherit; }
-  input:focus, select:focus, textarea:focus { border-color:#3b82f6; }
-  .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  button.primary { margin-top:16px; height:40px; padding:0 18px; border:0; border-radius:9px; background:#3b82f6; color:#fff; font-weight:600; cursor:pointer; }
-  button.primary:hover { background:#2f6fd6; }
-  .err { padding:10px 12px; border:1px solid #7f1d1d; background:#2a1315; color:#fca5a5; border-radius:10px; font-size:13px; margin-bottom:16px; }
-  details summary { cursor:pointer; color:#8a93a2; font-size:12px; margin-top:8px; }
-  .hint { font-size:11px; color:#6b7280; margin-top:6px; }
-</style>
+{{template "styles" .}}
 </head>
 <body>
-  <header>
-    <span class="brand">{{.PanelName}}</span>
-    <nav>
-      <a href="/admin">Servers</a>
-      <a href="/admin/public">Public page</a>
-      <form method="post" action="/logout" style="display:inline"><button>Sign out</button></form>
-    </nav>
-  </header>
-  <main>
-    {{if .Error}}<div class="err">{{.Error}}</div>{{end}}
+  {{template "topnav" .}}
+  <div class="wrap">
+    {{if .Error}}<div class="alert err">{{.Error}}</div>{{end}}
 
-    <h2>Your servers</h2>
+    <h1 class="pt">Servers</h1>
+    <p class="sub">Install and manage your own VPS servers. Each runs the SSH / V2Ray / DNSTT stack.</p>
+
     {{if .Servers}}
+    <div class="grid g2">
       {{range .Servers}}
-      <div class="card srv">
-        <div>
-          <a href="/admin/servers/{{.ID}}">{{.Label}}</a>
-          <div class="muted">{{.IP}} · profile {{.InstallProfile}} · {{.CreatedAt}}</div>
+      <a class="card" href="/admin/servers/{{.ID}}" style="text-decoration:none;display:block;transition:border-color .15s" onmouseover="this.style.borderColor='#6d8bff'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <strong style="font-size:15px">{{.Label}}</strong>
+          <span class="chip {{if or (eq .ProvisionStatus "completed") (eq .ProvisionStatus "ready") (eq .ProvisionStatus "success")}}ok{{else if eq .ProvisionStatus "failed"}}bad{{else}}warn{{end}}">{{.ProvisionStatus}}</span>
         </div>
-        <span class="badge {{if or (eq .ProvisionStatus "completed") (eq .ProvisionStatus "ready") (eq .ProvisionStatus "success")}}ok{{else if eq .ProvisionStatus "failed"}}bad{{else}}warn{{end}}">{{.ProvisionStatus}}</span>
-      </div>
+        <div class="muted fs12" style="margin-top:4px">{{if .IP}}{{.IP}}{{else}}{{.Host}}{{end}} · profile {{.InstallProfile}}</div>
+        {{with index .Ports "direct"}}<div class="spec"><span class="k">SSH</span><span class="v">{{.}}</span></div>{{end}}
+        {{if .V2Ray}}<div class="spec"><span class="k">V2Ray · {{.V2Ray.Protocol}}</span><span class="v">{{.V2Ray.Port}}</span></div>{{end}}
+      </a>
       {{end}}
+    </div>
     {{else}}
-      <div class="card muted">No servers yet. Install one below.</div>
+    <div class="card muted">No servers yet — install your first one below.</div>
     {{end}}
 
-    <h2>Install a new server</h2>
+    <div class="sect">Install a new server</div>
     <div class="card">
       <form method="post" action="/admin/servers">
-        <div class="row">
+        <div class="grid g2">
           <div><label>Label</label><input name="label" placeholder="my-vps" required></div>
           <div><label>Host / IP</label><input name="host" placeholder="203.0.113.10" required></div>
         </div>
-        <div class="row">
+        <div class="grid g2">
           <div><label>SSH port</label><input name="ssh_port" value="22"></div>
           <div>
             <label>Install profile</label>
             <select name="install_profile">
-              <option value="1">1 — Full (SSH + V2Ray + DNSTT)</option>
-              <option value="2">2 — WebSocket + Stunnel</option>
-              <option value="3">3 — DNSTT only</option>
-              <option value="4">4 — Management only</option>
+              <option value="1">Full — SSH + V2Ray + DNSTT</option>
+              <option value="2">WebSocket + Stunnel</option>
+              <option value="3">DNSTT only</option>
+              <option value="4">Management only</option>
             </select>
           </div>
         </div>
         <label>Root password</label>
-        <input name="root_password" type="password" placeholder="root password (or use an SSH key below)">
-        <details>
-          <summary>Use an SSH private key instead</summary>
+        <input name="root_password" type="password" placeholder="root password (or paste an SSH key below)">
+        <details style="margin-top:10px"><summary class="muted fs12" style="cursor:pointer">Use an SSH private key instead</summary>
           <label>SSH private key</label>
           <textarea name="ssh_key" rows="4" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea>
         </details>
-        <div class="hint">Requires a fresh root Ubuntu/Debian VPS. Install runs over SSH and takes a few minutes.</div>
-        <button class="primary" type="submit">Install server</button>
+        <p class="muted fs12" style="margin-top:10px">Requires a fresh root Ubuntu/Debian VPS. Install runs over SSH and takes a few minutes.</p>
+        <button class="btn" type="submit" style="margin-top:6px">Install server</button>
       </form>
     </div>
 
-    <h2>Public free page</h2>
-    <div class="card srv">
+    <div class="sect">Public free page</div>
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between">
       <div>
-        {{if .Public.Enabled}}<span class="badge ok">Enabled</span>{{else}}<span class="badge">Disabled</span>{{end}}
-        <span class="muted">&nbsp; Free users create accounts on server #{{.Public.ServerID}} · {{.Public.Days}} days · {{.Public.MaxLogins}} logins</span>
+        {{if .Public.Enabled}}<span class="chip ok">Live</span>{{else}}<span class="chip">Off</span>{{end}}
+        <span class="muted fs13">&nbsp; Server #{{.Public.ServerID}} · {{.Public.Days}} days · {{.Public.MaxLogins}} logins · {{.Public.PerIPDaily}}/IP daily</span>
       </div>
-      <a class="muted" href="/admin/public" style="text-decoration:none">Configure →</a>
+      <a class="btn ghost sm" href="/admin/public">Configure</a>
     </div>
-  </main>
+  </div>
 </body>
 </html>
