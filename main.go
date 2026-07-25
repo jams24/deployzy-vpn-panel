@@ -258,8 +258,9 @@ func (a *App) handleInstallServer(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/admin/servers/%d?job=%d", resp.ServerID, resp.JobID), http.StatusSeeOther)
 }
 
-func (a *App) handleServerDetail(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.Atoi(r.PathValue("id"))
+// renderServerPage loads a server + its accounts and renders server.html.
+// `extra` is merged in (e.g. a freshly-created account's Connection block).
+func (a *App) renderServerPage(w http.ResponseWriter, r *http.Request, id int, extra map[string]any) {
 	srv, err := a.tut.GetServer(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Error(), 404)
@@ -271,7 +272,15 @@ func (a *App) handleServerDetail(w http.ResponseWriter, r *http.Request) {
 		"Server": srv, "Users": users, "Config": cfg,
 		"JobID": r.URL.Query().Get("job"),
 	}
+	for k, v := range extra {
+		data[k] = v
+	}
 	a.render(w, "server.html", data)
+}
+
+func (a *App) handleServerDetail(w http.ResponseWriter, r *http.Request) {
+	id, _ := strconv.Atoi(r.PathValue("id"))
+	a.renderServerPage(w, r, id, nil)
 }
 
 func (a *App) handleDeleteServer(w http.ResponseWriter, r *http.Request) {
@@ -284,17 +293,20 @@ func (a *App) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(r.PathValue("id"))
 	days, _ := strconv.Atoi(r.FormValue("days"))
 	maxLogins, _ := strconv.Atoi(r.FormValue("max_logins"))
-	_, err := a.tut.CreateUser(r.Context(), id, CreateUserReq{
+	created, err := a.tut.CreateUser(r.Context(), id, CreateUserReq{
 		Username:  strings.TrimSpace(r.FormValue("username")),
 		Password:  r.FormValue("password"),
 		Days:      days,
 		MaxLogins: maxLogins,
 	})
-	dest := fmt.Sprintf("/admin/servers/%d", id)
+	// Render inline so the one-time password + connection configs are shown.
+	extra := map[string]any{}
 	if err != nil {
-		dest += "?err=" + urlEncode(err.Error())
+		extra["Error"] = err.Error()
+	} else {
+		extra["Created"] = created
 	}
-	http.Redirect(w, r, dest, http.StatusSeeOther)
+	a.renderServerPage(w, r, id, extra)
 }
 
 func (a *App) handleDeleteUser(w http.ResponseWriter, r *http.Request) {

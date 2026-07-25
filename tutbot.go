@@ -90,8 +90,78 @@ type Server struct {
 	Services        map[string]any `json:"services"`
 	Ports           map[string]any `json:"ports"`
 	Domain          string         `json:"domain"`
-	DNSTTDomain     string         `json:"dnstt_domain"`
+	CDNDomain       string         `json:"cdn_domain"`
+	DNSTT           *DNSTTInfo     `json:"dnstt"`
+	V2Ray          *V2RayInfo     `json:"v2ray"`
 	CreatedAt       string         `json:"created_at"`
+}
+
+type DNSTTInfo struct {
+	Domain     string `json:"domain"`
+	Pubkey     string `json:"pubkey"`
+	Nameserver string `json:"nameserver"`
+}
+
+type V2RayInfo struct {
+	Protocol    string `json:"protocol"`
+	UUID        string `json:"uuid"`
+	Port        int    `json:"port"`
+	CDNPort     int    `json:"cdn_port"`
+	Security    string `json:"security"`
+	SNI         string `json:"sni"`
+	PublicKey   string `json:"public_key"`
+	ShortID     string `json:"short_id"`
+	Fingerprint string `json:"fingerprint"`
+}
+
+// Connection is the rich, client-agnostic config block the API returns on
+// account create (with password) and read (without).
+type Connection struct {
+	Host  string          `json:"host"`
+	SSH   *SSHConn        `json:"ssh"`
+	V2Ray *V2RayConn      `json:"v2ray"`
+	DNSTT *DNSTTInfo      `json:"dnstt"`
+	Payload *PayloadConn  `json:"payload"`
+}
+
+type SSHConn struct {
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	SSLPort  int    `json:"ssl_port"`
+	WSPort   int    `json:"ws_port"`
+	Username string `json:"username"`
+	Password string `json:"password,omitempty"`
+}
+
+type V2RayConn struct {
+	Protocol    string    `json:"protocol"`
+	UUID        string    `json:"uuid"`
+	Port        int       `json:"port"`
+	CDNPort     int       `json:"cdn_port"`
+	Security    string    `json:"security"`
+	Network     string    `json:"network"`
+	SNI         string    `json:"sni"`
+	PublicKey   string    `json:"public_key"`
+	ShortID     string    `json:"short_id"`
+	Fingerprint string    `json:"fingerprint"`
+	URI         string    `json:"uri"`
+	CDN         *V2RayCDN `json:"cdn"`
+}
+
+type V2RayCDN struct {
+	Address  string `json:"address"`
+	Port     int    `json:"port"`
+	Network  string `json:"network"`
+	Security string `json:"security"`
+	WSHost   string `json:"ws_host"`
+	WSPath   string `json:"ws_path"`
+	SNI      string `json:"sni"`
+	URI      string `json:"uri"`
+}
+
+type PayloadConn struct {
+	Host    string `json:"host"`
+	Request string `json:"request"`
 }
 
 type Job struct {
@@ -103,15 +173,16 @@ type Job struct {
 }
 
 type TunnelUser struct {
-	ID          int    `json:"id"`
-	ServerID    int    `json:"server_id"`
-	Username    string `json:"username"`
-	Password    string `json:"password,omitempty"`
-	ConnectCode string `json:"connect_code,omitempty"`
-	Status      string `json:"status"`
-	ExpiresAt   string `json:"expires_at"`
-	MaxLogins   int    `json:"max_logins"`
-	HasV2Ray    bool   `json:"has_v2ray"`
+	ID          int         `json:"id"`
+	ServerID    int         `json:"server_id"`
+	Username    string      `json:"username"`
+	Password    string      `json:"password,omitempty"`
+	ConnectCode string      `json:"connect_code,omitempty"`
+	Status      string      `json:"status"`
+	ExpiresAt   string      `json:"expires_at"`
+	MaxLogins   int         `json:"max_logins"`
+	HasV2Ray    bool        `json:"has_v2ray"`
+	Connection  *Connection `json:"connection,omitempty"`
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────
@@ -207,6 +278,15 @@ func (c *TutBot) ListUsers(ctx context.Context, serverID int) ([]TunnelUser, err
 	}
 	err := c.do(ctx, "GET", fmt.Sprintf("/api/v1/servers/%d/users", serverID), nil, &out)
 	return out.Users, err
+}
+
+func (c *TutBot) GetUser(ctx context.Context, uid int) (*TunnelUser, error) {
+	var out TunnelUser
+	err := c.do(ctx, "GET", fmt.Sprintf("/api/v1/users/%d", uid), nil, &out)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 func (c *TutBot) RenewUser(ctx context.Context, uid, days int) error {

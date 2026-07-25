@@ -27,6 +27,7 @@
 </style>
 </head>
 <body>
+  {{template "connstyle" .}}
   <div class="wrap">
     <h1>{{.PanelName}}</h1>
     <p class="sub">Create a free SSH / V2Ray account</p>
@@ -37,11 +38,13 @@
         <h2>Account ready 🎉</h2>
         <div class="field"><span>Username</span><code>{{.Created.Username}}</code></div>
         <div class="field"><span>Password</span><code>{{.Created.Password}}</code></div>
-        {{if .Created.ConnectCode}}<div class="field"><span>Connect code</span><code>{{.Created.ConnectCode}}</code></div>{{end}}
         <div class="field"><span>Expires</span><span>{{.Created.ExpiresAt}}</span></div>
         <div class="field"><span>Max logins</span><span>{{.Created.MaxLogins}}</span></div>
       </div>
-      <p class="terms">Save these now — the password is shown only once.</p>
+      {{if .Created.Connection}}
+      <div class="conn" style="margin-top:14px">{{template "connblock" .Created.Connection}}</div>
+      {{end}}
+      <p class="terms">Save these now — the password is shown only once. Tap any value to copy.</p>
       <a href="/"><button type="button">Create another</button></a>
     </div>
     {{else}}

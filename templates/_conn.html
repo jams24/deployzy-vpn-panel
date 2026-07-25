@@ -1,0 +1,62 @@
+{{define "connblock"}}
+{{/* expects a *Connection as . */}}
+{{if .SSH}}
+<div class="conn-sec">
+  <div class="conn-h">SSH</div>
+  <div class="conn-row"><span>Host</span><code data-copy>{{.SSH.Host}}</code></div>
+  <div class="conn-row"><span>Port (direct)</span><code data-copy>{{.SSH.Port}}</code></div>
+  <div class="conn-row"><span>SSL/TLS port</span><code data-copy>{{.SSH.SSLPort}}</code></div>
+  <div class="conn-row"><span>WebSocket port</span><code data-copy>{{.SSH.WSPort}}</code></div>
+  <div class="conn-row"><span>Username</span><code data-copy>{{.SSH.Username}}</code></div>
+  {{if .SSH.Password}}<div class="conn-row"><span>Password</span><code data-copy>{{.SSH.Password}}</code></div>{{end}}
+</div>
+{{end}}
+{{if .V2Ray}}
+<div class="conn-sec">
+  <div class="conn-h">V2Ray / {{.V2Ray.Protocol}} {{if .V2Ray.Security}}· {{.V2Ray.Security}}{{end}}</div>
+  {{if .V2Ray.URI}}<div class="conn-uri"><code data-copy>{{.V2Ray.URI}}</code></div>{{end}}
+  {{if .V2Ray.CDN}}
+  <div class="conn-h" style="margin-top:10px">Cloudflare CDN (WS+TLS)</div>
+  <div class="conn-uri"><code data-copy>{{.V2Ray.CDN.URI}}</code></div>
+  {{end}}
+</div>
+{{end}}
+{{if .DNSTT}}{{if .DNSTT.Domain}}
+<div class="conn-sec">
+  <div class="conn-h">DNSTT (DNS tunnel)</div>
+  <div class="conn-row"><span>Domain</span><code data-copy>{{.DNSTT.Domain}}</code></div>
+  <div class="conn-row"><span>Public key</span><code data-copy>{{.DNSTT.Pubkey}}</code></div>
+  <div class="conn-row"><span>Nameserver</span><code data-copy>{{.DNSTT.Nameserver}}</code></div>
+</div>
+{{end}}{{end}}
+{{if .Payload}}{{if .Payload.Host}}
+<div class="conn-sec">
+  <div class="conn-h">Payload / bug host</div>
+  <div class="conn-row"><span>Host (SNI)</span><code data-copy>{{.Payload.Host}}</code></div>
+</div>
+{{end}}{{end}}
+{{end}}
+
+{{define "connstyle"}}
+<style>
+  .conn { border:1px solid #234; border-radius:12px; background:#0c1420; padding:14px; }
+  .conn-sec { padding:10px 0; border-bottom:1px solid #13202e; }
+  .conn-sec:last-child { border-bottom:0; }
+  .conn-h { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#7f9cc0; margin-bottom:6px; }
+  .conn-row { display:flex; justify-content:space-between; gap:12px; align-items:center; padding:3px 0; font-size:13px; }
+  .conn-row span { color:#8a93a2; }
+  .conn code, .conn-uri code { font-family:ui-monospace,Menlo,monospace; font-size:12px; color:#cfe3ff; cursor:pointer; word-break:break-all; }
+  .conn-uri { margin-top:4px; padding:8px; background:#0b0e14; border:1px solid #1e2530; border-radius:8px; }
+  code[data-copy]:hover { color:#fff; text-decoration:underline; }
+</style>
+<script>
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('code[data-copy]');
+    if (!el) return;
+    navigator.clipboard.writeText(el.textContent.trim()).then(function(){
+      var old = el.textContent; el.textContent = '✓ copied';
+      setTimeout(function(){ el.textContent = old; }, 900);
+    });
+  });
+</script>
+{{end}}

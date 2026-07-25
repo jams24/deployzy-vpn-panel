@@ -45,7 +45,9 @@
       <form method="post" action="/logout" style="display:inline"><button>Sign out</button></form>
     </nav>
   </header>
+  {{template "connstyle" .}}
   <main>
+    {{if .Error}}<div class="err" style="margin-bottom:14px">{{.Error}}</div>{{end}}
     <a class="back" href="/admin">← All servers</a>
     <h1>{{.Server.Label}}
       <span class="badge {{if or (eq .Server.ProvisionStatus "completed") (eq .Server.ProvisionStatus "ready") (eq .Server.ProvisionStatus "success")}}ok{{else if eq .Server.ProvisionStatus "failed"}}bad{{else}}warn{{end}}">{{.Server.ProvisionStatus}}</span>
@@ -77,11 +79,32 @@
     </script>
     {{end}}
 
+    {{if .Created}}
+    <div class="card" style="border-color:#065f46">
+      <h2 style="color:#34d399">✅ Account created — {{.Created.Username}}</h2>
+      <p class="muted" style="margin:-4px 0 12px">Save the password now — it is shown only once.</p>
+      <div class="conn">{{template "connblock" .Created.Connection}}</div>
+    </div>
+    {{end}}
+
     {{if .Server.Services}}
     <div class="card">
       <h2>Services & ports</h2>
       <div class="kv">
         {{range $k, $v := .Server.Services}}<span>{{$k}}: {{$v}}</span>{{end}}
+      </div>
+    </div>
+    {{end}}
+
+    {{if .Server.V2Ray}}
+    <div class="card">
+      <h2>V2Ray / {{.Server.V2Ray.Protocol}}</h2>
+      <div class="kv">
+        <span>UUID: {{.Server.V2Ray.UUID}}</span>
+        <span>Port: {{.Server.V2Ray.Port}}</span>
+        {{if .Server.V2Ray.Security}}<span>Security: {{.Server.V2Ray.Security}}</span>{{end}}
+        {{if .Server.V2Ray.SNI}}<span>SNI: {{.Server.V2Ray.SNI}}</span>{{end}}
+        {{if .Server.CDNDomain}}<span>CDN: {{.Server.CDNDomain}}</span>{{end}}
       </div>
     </div>
     {{end}}
