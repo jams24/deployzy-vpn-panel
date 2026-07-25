@@ -1,0 +1,5 @@
+/panel
+/dzy-panel
+*.log
+.DS_Store
+/data
