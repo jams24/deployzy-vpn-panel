@@ -3,33 +3,60 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{.PanelName}} — Servers</title>
+<title>{{.PanelName}} — Dashboard</title>
 {{template "styles" .}}
+<style>
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:6px 0 8px}
+  @media(max-width:640px){.stats{grid-template-columns:1fr}}
+  .stat{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:16px;padding:18px 20px}
+  .stat .n{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:6px}
+  .stat .n.grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .srvcard{display:block;text-decoration:none;transition:border-color .15s,transform .1s}
+  .srvcard:hover{border-color:var(--brand1);transform:translateY(-1px)}
+  .dotlive{width:8px;height:8px;border-radius:50%;display:inline-block}
+</style>
 </head>
 <body>
   {{template "topnav" .}}
   <div class="wrap">
     {{if .Error}}<div class="alert err">{{.Error}}</div>{{end}}
 
-    <h1 class="pt">Servers</h1>
-    <p class="sub">Install and manage your own VPS servers. Each runs the SSH / V2Ray / DNSTT stack.</p>
+    <h1 class="pt">Dashboard</h1>
+    <p class="sub">Install and manage your own VPS servers running SSH · V2Ray · DNSTT.</p>
 
+    <div class="stats">
+      <div class="stat"><div class="n grad">{{len .Servers}}</div><div class="l">Server{{if ne (len .Servers) 1}}s{{end}} connected</div></div>
+      <div class="stat"><div class="n">{{if .Public.Enabled}}<span style="color:var(--ok)">Live</span>{{else}}Off{{end}}</div><div class="l">Public free page</div></div>
+      <div class="stat"><div class="n">{{.Public.Days}}<span style="font-size:15px;color:var(--muted)">d</span></div><div class="l">Free account validity</div></div>
+    </div>
+
+    <div class="sect">Your servers</div>
     {{if .Servers}}
     <div class="grid g2">
       {{range .Servers}}
-      <a class="card" href="/admin/servers/{{.ID}}" style="text-decoration:none;display:block;transition:border-color .15s" onmouseover="this.style.borderColor='#6d8bff'" onmouseout="this.style.borderColor='var(--border)'">
+      <a class="card srvcard" href="/admin/servers/{{.ID}}">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <strong style="font-size:15px">{{.Label}}</strong>
-          <span class="chip {{if or (eq .ProvisionStatus "completed") (eq .ProvisionStatus "ready") (eq .ProvisionStatus "success")}}ok{{else if eq .ProvisionStatus "failed"}}bad{{else}}warn{{end}}">{{.ProvisionStatus}}</span>
+          {{$ok := or (eq .ProvisionStatus "completed") (eq .ProvisionStatus "ready") (eq .ProvisionStatus "success")}}
+          <span class="chip {{if $ok}}ok{{else if eq .ProvisionStatus "failed"}}bad{{else}}warn{{end}}">
+            <span class="dotlive" style="background:{{if $ok}}var(--ok){{else if eq .ProvisionStatus "failed"}}var(--bad){{else}}var(--warn){{end}}"></span>{{.ProvisionStatus}}
+          </span>
         </div>
         <div class="muted fs12" style="margin-top:4px">{{if .IP}}{{.IP}}{{else}}{{.Host}}{{end}} · profile {{.InstallProfile}}</div>
         {{with index .Ports "direct"}}<div class="spec"><span class="k">SSH</span><span class="v">{{.}}</span></div>{{end}}
         {{if .V2Ray}}<div class="spec"><span class="k">V2Ray · {{.V2Ray.Protocol}}</span><span class="v">{{.V2Ray.Port}}</span></div>{{end}}
+        {{if .DNSTT}}{{if .DNSTT.Domain}}<div class="spec"><span class="k">DNSTT</span><span class="v">{{.DNSTT.Domain}}</span></div>{{end}}{{end}}
+        <div style="margin-top:12px;font-size:12px;font-weight:600;color:var(--brand1)">Manage →</div>
       </a>
       {{end}}
     </div>
     {{else}}
-    <div class="card muted">No servers yet — install your first one below.</div>
+    <div class="card" style="text-align:center;padding:40px 20px">
+      <div style="font-size:34px">🖥️</div>
+      <p style="font-weight:600;margin:10px 0 2px">No servers yet</p>
+      <p class="muted fs13" style="margin:0">Install your first VPS below — it takes a few minutes.</p>
+    </div>
     {{end}}
 
     <div class="sect">Install a new server</div>
@@ -63,7 +90,7 @@
     </div>
 
     <div class="sect">Public free page</div>
-    <div class="card" style="display:flex;align-items:center;justify-content:space-between">
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
       <div>
         {{if .Public.Enabled}}<span class="chip ok">Live</span>{{else}}<span class="chip">Off</span>{{end}}
         <span class="muted fs13">&nbsp; Server #{{.Public.ServerID}} · {{.Public.Days}} days · {{.Public.MaxLogins}} logins · {{.Public.PerIPDaily}}/IP daily</span>
