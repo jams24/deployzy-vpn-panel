@@ -30,8 +30,6 @@
   .glass{background:linear-gradient(180deg,rgba(20,26,40,.9),rgba(12,17,28,.9));border:1px solid var(--border2);border-radius:20px;padding:24px;box-shadow:0 30px 80px -30px rgba(0,0,0,.7)}
   .glass h3{margin:0 0 4px;font-size:16px}
   .footer{max-width:1040px;margin:60px auto 0;padding:24px 22px;border-top:1px solid var(--border);color:var(--faint);font-size:12px;text-align:center}
-  .adminlink{font-size:13px;color:var(--muted);text-decoration:none;padding:8px 14px;border:1px solid var(--border2);border-radius:10px}
-  .adminlink:hover{color:var(--text);border-color:var(--brand1)}
 </style>
 </head>
 <body>
@@ -39,7 +37,7 @@
 
   <div class="phead">
     <span class="brand"><span class="dot"></span>{{.PanelName}}</span>
-    <a class="adminlink" href="/login">Admin</a>
+    {{if .Open}}<span class="chip ok" style="font-size:11px"><span class="pulse" style="width:6px;height:6px;border-radius:50%;background:currentColor"></span> Online</span>{{end}}
   </div>
 
   {{if .Created}}
