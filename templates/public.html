@@ -3,52 +3,103 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{.PanelName}} — Free SSH / V2Ray</title>
+<title>{{.PanelName}} — Free SSH &amp; V2Ray</title>
 {{template "styles" .}}
 {{template "connstyle" .}}
+<style>
+  body{overflow-x:hidden}
+  .orbs{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+  .orb{position:absolute;border-radius:50%;filter:blur(90px);opacity:.55}
+  .orb.a{width:520px;height:520px;background:#6d8bff;top:-160px;right:-120px;animation:float1 16s ease-in-out infinite}
+  .orb.b{width:460px;height:460px;background:#8b5cf6;bottom:-180px;left:-140px;animation:float2 20s ease-in-out infinite}
+  .orb.c{width:300px;height:300px;background:#22d3ee;top:40%;left:55%;opacity:.28;animation:float1 24s ease-in-out infinite}
+  @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,40px)}}
+  @keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,-30px)}}
+  .phead{max-width:1040px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:18px 22px}
+  .hero{max-width:780px;margin:0 auto;text-align:center;padding:48px 22px 8px}
+  .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:#b9c4d8;border:1px solid var(--border2);background:rgba(255,255,255,.03);padding:6px 14px;border-radius:999px}
+  .eyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(52,211,153,.6);animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,.5)}70%{box-shadow:0 0 0 8px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+  h1.hero-t{font-size:clamp(30px,6vw,52px);line-height:1.05;letter-spacing:-.03em;font-weight:800;margin:18px 0 12px}
+  h1.hero-t .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero-p{color:var(--muted);font-size:16px;max-width:540px;margin:0 auto}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:22px 0 6px}
+  .pill{font-size:12px;color:#c7d0de;border:1px solid var(--border);background:rgba(255,255,255,.02);padding:7px 13px;border-radius:10px;display:flex;align-items:center;gap:7px}
+  .stage{max-width:920px;margin:26px auto 0;padding:0 22px;display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media(max-width:760px){.stage{grid-template-columns:1fr}}
+  .glass{background:linear-gradient(180deg,rgba(20,26,40,.9),rgba(12,17,28,.9));border:1px solid var(--border2);border-radius:20px;padding:24px;box-shadow:0 30px 80px -30px rgba(0,0,0,.7)}
+  .glass h3{margin:0 0 4px;font-size:16px}
+  .footer{max-width:1040px;margin:60px auto 0;padding:24px 22px;border-top:1px solid var(--border);color:var(--faint);font-size:12px;text-align:center}
+  .adminlink{font-size:13px;color:var(--muted);text-decoration:none;padding:8px 14px;border:1px solid var(--border2);border-radius:10px}
+  .adminlink:hover{color:var(--text);border-color:var(--brand1)}
+</style>
 </head>
 <body>
-  <div class="topbar"><div class="in">
+  <div class="orbs"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div>
+
+  <div class="phead">
     <span class="brand"><span class="dot"></span>{{.PanelName}}</span>
-    <span class="chip ok">Free access</span>
-  </div></div>
+    <a class="adminlink" href="/login">Admin</a>
+  </div>
 
-  <div class="wrap wrap-sm">
-    <div style="text-align:center;margin:8px 0 22px">
-      <h1 class="pt" style="font-size:26px">Create a free account</h1>
-      <p class="sub">Fast SSH &amp; V2Ray access — valid for {{.Cfg.Days}} days · up to {{.Cfg.MaxLogins}} login(s).</p>
-    </div>
-
-    {{if .Created}}
-    <div class="card" style="border-color:#1c5842">
-      <div style="text-align:center;margin-bottom:8px"><span class="chip ok">Account ready 🎉</span></div>
+  {{if .Created}}
+  <div class="hero" style="padding-top:34px">
+    <span class="eyebrow"><span class="pulse"></span> Account created</span>
+    <h1 class="hero-t">You're <span class="grad">connected</span>.</h1>
+    <p class="hero-p">Save these details now — the password is shown only once. Tap any value to copy.</p>
+  </div>
+  <div class="stage" style="grid-template-columns:1fr;max-width:560px">
+    <div class="glass">
       <div class="spec"><span class="k">Username</span><span class="v">{{.Created.Username}}</span></div>
       <div class="spec"><span class="k">Password</span><span class="v">{{.Created.Password}}</span></div>
       <div class="spec"><span class="k">Expires</span><span class="v">{{.Created.ExpiresAt}}</span></div>
       <div class="spec"><span class="k">Max logins</span><span class="v">{{.Created.MaxLogins}}</span></div>
       {{if .Created.Connection}}<div class="conn" style="margin-top:14px">{{template "connblock" .Created.Connection}}</div>{{end}}
-      <p class="muted fs12" style="text-align:center;margin-top:12px">Save these now — the password is shown only once. Tap any value to copy.</p>
-      <a href="/" class="btn block" style="margin-top:6px">Create another</a>
+      <a href="/" class="btn block" style="margin-top:18px">Create another account</a>
     </div>
-    {{else}}
-      {{if .Server}}
-      <div class="card" style="margin-bottom:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <strong style="font-size:15px">{{.Server.Label}}</strong>
-          <span class="chip ok">online</span>
-        </div>
-        {{template "serverspecs" .Server}}
-      </div>
-      {{end}}
-      <form class="card" method="post" action="/free">
-        {{if .Error}}<div class="alert err">{{.Error}}</div>{{end}}
-        <label>Choose a username</label>
-        <input name="username" placeholder="leave blank for a random one" autofocus>
-        <label>Choose a password</label>
-        <input name="password" type="text" placeholder="leave blank for a random one">
-        <button class="btn block" type="submit" style="margin-top:18px">Create free account</button>
-      </form>
-    {{end}}
   </div>
+
+  {{else}}
+  <div class="hero">
+    <span class="eyebrow"><span class="pulse"></span> {{if .Open}}Servers online{{else}}Coming soon{{end}}</span>
+    <h1 class="hero-t">Fast, free <span class="grad">SSH &amp; V2Ray</span><br>access in seconds.</h1>
+    <p class="hero-p">Create a tunnel account instantly — no email, no wait. Works with HTTP Injector, NapsternetV, v2rayNG and more.</p>
+    <div class="pills">
+      <span class="pill">⚡ High-speed servers</span>
+      <span class="pill">🔒 SSH · V2Ray · DNSTT</span>
+      <span class="pill">☁️ Cloudflare CDN</span>
+      <span class="pill">🕒 {{.Cfg.Days}}-day validity</span>
+    </div>
+  </div>
+
+  {{if .Open}}
+  <div class="stage">
+    <div class="glass">
+      <h3>Server details</h3>
+      <p class="muted fs12" style="margin:0 0 8px">{{if .Server}}{{.Server.Label}}{{end}}</p>
+      {{if .Server}}{{template "serverspecs" .Server}}{{else}}<p class="muted fs13">Loading…</p>{{end}}
+    </div>
+    <form class="glass" method="post" action="/free">
+      <h3>Create your account</h3>
+      <p class="muted fs12" style="margin:0 0 8px">Valid {{.Cfg.Days}} days · up to {{.Cfg.MaxLogins}} login(s).</p>
+      {{if .Error}}<div class="alert err">{{.Error}}</div>{{end}}
+      <label>Username</label>
+      <input name="username" placeholder="leave blank for a random one" autofocus>
+      <label>Password</label>
+      <input name="password" type="text" placeholder="leave blank for a random one">
+      <button class="btn block" type="submit" style="margin-top:18px">Create free account →</button>
+    </form>
+  </div>
+  {{else}}
+  <div class="stage" style="grid-template-columns:1fr;max-width:520px">
+    <div class="glass" style="text-align:center">
+      <h3>Free accounts aren't open yet</h3>
+      <p class="muted fs13" style="margin:6px 0 0">The administrator hasn't opened public sign-ups. Please check back soon.</p>
+    </div>
+  </div>
+  {{end}}
+  {{end}}
+
+  <div class="footer">{{.PanelName}} · powered by Deployzy</div>
 </body>
 </html>

@@ -388,13 +388,13 @@ func (a *App) handleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cfg := a.store.Public()
-	if !cfg.Enabled || cfg.ServerID == 0 {
-		// No public offering — send visitors to the admin login.
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
+	open := cfg.Enabled && cfg.ServerID != 0
+	var srv *Server
+	if open {
+		srv, _ = a.tut.GetServer(r.Context(), cfg.ServerID)
 	}
-	srv, _ := a.tut.GetServer(r.Context(), cfg.ServerID)
-	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv})
+	// The homepage is always the public face — never force a login here.
+	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Open": open})
 }
 
 func (a *App) handleFreeCreate(w http.ResponseWriter, r *http.Request) {
@@ -405,7 +405,7 @@ func (a *App) handleFreeCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	srv, _ := a.tut.GetServer(r.Context(), cfg.ServerID)
 	if !a.ipAllow(clientIP(r), cfg.PerIPDaily) {
-		a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Error": "Daily limit reached from your network. Try again tomorrow."})
+		a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Open": true, "Error": "Daily limit reached from your network. Try again tomorrow."})
 		return
 	}
 	user, err := a.tut.CreateUser(r.Context(), cfg.ServerID, CreateUserReq{
@@ -415,10 +415,10 @@ func (a *App) handleFreeCreate(w http.ResponseWriter, r *http.Request) {
 		MaxLogins: cfg.MaxLogins,
 	})
 	if err != nil {
-		a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Error": err.Error()})
+		a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Open": true, "Error": err.Error()})
 		return
 	}
-	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Created": user})
+	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Open": true, "Created": user})
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────
