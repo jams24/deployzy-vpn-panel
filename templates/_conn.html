@@ -23,11 +23,22 @@
 {{end}}
 {{if .DNSTT}}{{if .DNSTT.Domain}}
 <div class="conn-sec">
-  <div class="conn-h">DNSTT (DNS tunnel)</div>
+  <div class="conn-h">SlowDNS / DNSTT</div>
+  <div class="conn-row"><span>Nameserver (NS)</span><code data-copy>{{.DNSTT.Nameserver}}</code></div>
   <div class="conn-row"><span>Domain</span><code data-copy>{{.DNSTT.Domain}}</code></div>
   <div class="conn-row"><span>Public key</span><code data-copy>{{.DNSTT.Pubkey}}</code></div>
-  <div class="conn-row"><span>Nameserver</span><code data-copy>{{.DNSTT.Nameserver}}</code></div>
+  <div class="conn-row"><span>DNS resolver</span><code data-copy>8.8.8.8</code></div>
 </div>
+{{if .V2Ray}}
+<div class="conn-sec">
+  <div class="conn-h">DNSTT + V2Ray (fast)</div>
+  <div class="conn-row"><span>Nameserver (NS)</span><code data-copy>{{.DNSTT.Nameserver}}</code></div>
+  <div class="conn-row"><span>Public key</span><code data-copy>{{.DNSTT.Pubkey}}</code></div>
+  <div class="conn-row"><span>DNS resolver</span><code data-copy>8.8.8.8</code></div>
+  <div class="conn-row"><span>V2Ray {{.V2Ray.Protocol}} UUID</span><code data-copy>{{.V2Ray.UUID}}</code></div>
+  <div class="conn-row"><span>V2Ray port</span><code data-copy>{{.V2Ray.Port}}</code></div>
+</div>
+{{end}}
 {{end}}{{end}}
 {{if .Payload}}{{if .Payload.Host}}
 <div class="conn-sec">
