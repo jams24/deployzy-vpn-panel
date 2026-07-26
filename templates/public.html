@@ -85,6 +85,11 @@
       <input name="username" placeholder="leave blank for a random one" autofocus>
       <label>Password</label>
       <input name="password" type="text" placeholder="leave blank for a random one">
+      {{if .Challenge}}
+      <label>Verify you're human — {{.Challenge}}</label>
+      <input name="challenge_answer" inputmode="numeric" autocomplete="off" placeholder="type the answer" required>
+      <input type="hidden" name="challenge_token" value="{{.ChallengeToken}}">
+      {{end}}
       <button class="btn block" type="submit" style="margin-top:18px">Create free account →</button>
     </form>
   </div>

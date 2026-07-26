@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -382,6 +383,43 @@ func (a *App) handlePublicConfigSave(w http.ResponseWriter, r *http.Request) {
 
 // ── Public (free) handlers ─────────────────────────────────────────────────
 
+// newChallenge returns a human-friendly math question and a stateless signed
+// token embedding the answer + expiry (HMAC'd with the app secret) — no server
+// storage, CSP-clean, no third-party captcha.
+func (a *App) newChallenge() (question, token string) {
+	x, y := 1+rand.Intn(9), 1+rand.Intn(9)
+	exp := time.Now().Add(10 * time.Minute).Unix()
+	payload := fmt.Sprintf("%d.%d", x+y, exp)
+	return fmt.Sprintf("What is %d + %d?", x, y), payload + "." + a.sign(payload)
+}
+
+// verifyChallenge validates the signed token, its expiry, and the answer.
+func (a *App) verifyChallenge(token, answer string) bool {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return false
+	}
+	payload := parts[0] + "." + parts[1]
+	if !hmac.Equal([]byte(a.sign(payload)), []byte(parts[2])) {
+		return false
+	}
+	exp, _ := strconv.ParseInt(parts[1], 10, 64)
+	if time.Now().Unix() > exp {
+		return false
+	}
+	return strings.TrimSpace(answer) == parts[0]
+}
+
+// renderPublicForm renders the public landing with a fresh challenge (and an
+// optional error), so every form render gets a new, unused challenge.
+func (a *App) renderPublicForm(w http.ResponseWriter, cfg PublicConfig, srv *Server, errMsg string) {
+	q, tok := a.newChallenge()
+	a.render(w, "public.html", map[string]any{
+		"Cfg": cfg, "Server": srv, "Open": true,
+		"Challenge": q, "ChallengeToken": tok, "Error": errMsg,
+	})
+}
+
 func (a *App) handleRoot(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
@@ -389,12 +427,13 @@ func (a *App) handleRoot(w http.ResponseWriter, r *http.Request) {
 	}
 	cfg := a.store.Public()
 	open := cfg.Enabled && cfg.ServerID != 0
-	var srv *Server
-	if open {
-		srv, _ = a.tut.GetServer(r.Context(), cfg.ServerID)
-	}
 	// The homepage is always the public face — never force a login here.
-	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Open": open})
+	if open {
+		srv, _ := a.tut.GetServer(r.Context(), cfg.ServerID)
+		a.renderPublicForm(w, cfg, srv, "")
+		return
+	}
+	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Open": false})
 }
 
 func (a *App) handleFreeCreate(w http.ResponseWriter, r *http.Request) {
@@ -404,8 +443,14 @@ func (a *App) handleFreeCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	srv, _ := a.tut.GetServer(r.Context(), cfg.ServerID)
+
+	// Anti-bot challenge — verify before doing any work.
+	if !a.verifyChallenge(r.FormValue("challenge_token"), r.FormValue("challenge_answer")) {
+		a.renderPublicForm(w, cfg, srv, "Verification failed — please answer the question and try again.")
+		return
+	}
 	if !a.ipAllow(clientIP(r), cfg.PerIPDaily) {
-		a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Open": true, "Error": "Daily limit reached from your network. Try again tomorrow."})
+		a.renderPublicForm(w, cfg, srv, "Daily limit reached from your network. Try again tomorrow.")
 		return
 	}
 	user, err := a.tut.CreateUser(r.Context(), cfg.ServerID, CreateUserReq{
@@ -415,7 +460,7 @@ func (a *App) handleFreeCreate(w http.ResponseWriter, r *http.Request) {
 		MaxLogins: cfg.MaxLogins,
 	})
 	if err != nil {
-		a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Open": true, "Error": err.Error()})
+		a.renderPublicForm(w, cfg, srv, err.Error())
 		return
 	}
 	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Open": true, "Created": user})
