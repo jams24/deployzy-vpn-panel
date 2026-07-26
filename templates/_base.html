@@ -64,8 +64,9 @@
   td{padding:10px;border-bottom:1px solid rgba(29,38,55,.6);vertical-align:middle}
   tr:last-child td{border-bottom:0}
   code{font-family:ui-monospace,Menlo,monospace}
-  .spec{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:7px 12px;border-radius:9px;background:#080808;border:1px solid var(--border);font-size:12.5px;margin-top:7px}
-  .spec .k{color:var(--muted)} .spec .v{font-weight:600;font-family:ui-monospace,Menlo,monospace}
+  .spec{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;padding:8px 12px;border-radius:9px;background:#080808;border:1px solid var(--border);font-size:12.5px;margin-top:7px}
+  .spec .k{color:var(--muted);white-space:nowrap;flex-shrink:0}
+  .spec .v{font-weight:600;font-family:ui-monospace,Menlo,monospace;text-align:right;word-break:break-all;min-width:0;flex:1}
   .inline{display:inline;margin:0}
 </style>
 {{end}}
