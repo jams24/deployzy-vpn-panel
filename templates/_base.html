@@ -2,20 +2,23 @@
 <style>
   :root{
     color-scheme: dark;
-    --bg:#080a10; --bg2:#0d1119; --panel:#111725; --panel2:#0c111c;
-    --border:#1d2637; --border2:#2a3547;
-    --text:#eaeef5; --muted:#8b97ab; --faint:#5c6b82;
-    --brand1:#6d8bff; --brand2:#8b5cf6; --accent:#22d3ee;
-    --ok:#34d399; --okbg:#0e2a20; --warn:#fbbf24; --bad:#fb7185;
-    --grad:linear-gradient(135deg,#6d8bff 0%,#8b5cf6 60%,#c084fc 100%);
+    /* Refined near-black slate with a single restrained blue accent — a calm,
+       modern palette (Linear/Vercel feel) rather than a multi-hue gradient. */
+    --bg:#0a0b0d; --bg2:#0f1114; --panel:#141619; --panel2:#101215;
+    --border:#232629; --border2:#2f3237;
+    --text:#e9eaec; --muted:#9297a0; --faint:#61656d;
+    --brand1:#4f7cf7; --brand2:#3a63e0; --accent:#4f7cf7;
+    --ok:#3ecf8e; --okbg:#0e241b; --warn:#e6b450; --bad:#f2555a;
+    /* Subtle same-hue tonal gradient for buttons — not a rainbow. */
+    --grad:linear-gradient(180deg,#5486f9,#3a63e0);
   }
   *{box-sizing:border-box}
   html,body{margin:0}
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
     background:
-      radial-gradient(900px 500px at 85% -10%, rgba(139,92,246,.16), transparent 60%),
-      radial-gradient(800px 500px at 0% 0%, rgba(109,139,255,.14), transparent 55%),
+      radial-gradient(1000px 560px at 88% -12%, rgba(79,124,247,.10), transparent 62%),
+      radial-gradient(760px 460px at -5% -5%, rgba(79,124,247,.07), transparent 58%),
       var(--bg);
     color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased;
   }
@@ -24,11 +27,11 @@
     background:rgba(9,12,20,.72);border-bottom:1px solid var(--border);}
   .topbar .in{max-width:1040px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:14px 22px}
   .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.01em;font-size:16px}
-  .brand .dot{width:26px;height:26px;border-radius:8px;background:var(--grad);box-shadow:0 4px 14px rgba(124,92,246,.45)}
+  .brand .dot{width:26px;height:26px;border-radius:8px;background:var(--grad);box-shadow:0 4px 14px rgba(79,124,247,.40)}
   .nav{display:flex;align-items:center;gap:6px}
   .nav a,.nav button{font-size:13px;color:var(--muted);text-decoration:none;padding:7px 12px;border-radius:9px;border:0;background:none;cursor:pointer;font-family:inherit}
   .nav a:hover,.nav button:hover{color:var(--text);background:rgba(255,255,255,.05)}
-  .nav a.active{color:var(--text);background:rgba(109,139,255,.14)}
+  .nav a.active{color:var(--text);background:rgba(79,124,247,.14)}
   .wrap{max-width:1040px;margin:0 auto;padding:26px 22px 70px}
   .wrap-sm{max-width:560px}
   h1.pt{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:6px 0 2px}
@@ -42,8 +45,8 @@
   .muted{color:var(--muted)} .fs12{font-size:12px} .fs13{font-size:13px}
   label{display:block;font-size:12px;color:var(--muted);margin:12px 0 6px;font-weight:500}
   input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;background:#0a0e17;color:var(--text);font-size:13px;outline:none;font-family:inherit;transition:border-color .15s,box-shadow .15s}
-  input:focus,select:focus,textarea:focus{border-color:var(--brand1);box-shadow:0 0 0 3px rgba(109,139,255,.15)}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 18px;border:0;border-radius:11px;font-weight:650;font-size:14px;cursor:pointer;font-family:inherit;color:#fff;background:var(--grad);box-shadow:0 6px 18px rgba(124,92,246,.32);transition:transform .1s,filter .15s}
+  input:focus,select:focus,textarea:focus{border-color:var(--brand1);box-shadow:0 0 0 3px rgba(79,124,247,.16)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 18px;border:0;border-radius:11px;font-weight:650;font-size:14px;cursor:pointer;font-family:inherit;color:#fff;background:var(--grad);box-shadow:0 6px 18px rgba(79,124,247,.28);transition:transform .1s,filter .15s}
   .btn:hover{filter:brightness(1.07)} .btn:active{transform:translateY(1px)}
   .btn.block{width:100%}
   .btn.ghost{background:none;border:1px solid var(--border2);color:var(--muted);box-shadow:none}

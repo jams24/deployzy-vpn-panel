@@ -370,12 +370,17 @@ func (a *App) handlePublicConfigSave(w http.ResponseWriter, r *http.Request) {
 	days, _ := strconv.Atoi(r.FormValue("days"))
 	ml, _ := strconv.Atoi(r.FormValue("max_logins"))
 	pid, _ := strconv.Atoi(r.FormValue("per_ip_daily"))
+	maxAcc, _ := strconv.Atoi(r.FormValue("max_accounts")) // 0 = unlimited
+	if maxAcc < 0 {
+		maxAcc = 0
+	}
 	cfg := PublicConfig{
-		Enabled:    r.FormValue("enabled") == "on",
-		ServerID:   sid,
-		Days:       max1(days, 1),
-		MaxLogins:  max1(ml, 1),
-		PerIPDaily: max1(pid, 1),
+		Enabled:     r.FormValue("enabled") == "on",
+		ServerID:    sid,
+		Days:        max1(days, 1),
+		MaxLogins:   max1(ml, 1),
+		MaxAccounts: maxAcc,
+		PerIPDaily:  max1(pid, 1),
 	}
 	a.store.SetPublic(cfg)
 	http.Redirect(w, r, "/admin/public", http.StatusSeeOther)
@@ -410,13 +415,30 @@ func (a *App) verifyChallenge(token, answer string) bool {
 	return strings.TrimSpace(answer) == parts[0]
 }
 
+// publicQuota reports how the server's account count sits against the configured
+// MaxAccounts cap. When MaxAccounts is 0 the offering is unlimited.
+func (a *App) publicQuota(ctx context.Context, cfg PublicConfig) (used, remaining int, full bool) {
+	if cfg.MaxAccounts <= 0 {
+		return 0, 0, false
+	}
+	users, _ := a.tut.ListUsers(ctx, cfg.ServerID)
+	used = len(users)
+	remaining = cfg.MaxAccounts - used
+	if remaining < 0 {
+		remaining = 0
+	}
+	return used, remaining, used >= cfg.MaxAccounts
+}
+
 // renderPublicForm renders the public landing with a fresh challenge (and an
 // optional error), so every form render gets a new, unused challenge.
-func (a *App) renderPublicForm(w http.ResponseWriter, cfg PublicConfig, srv *Server, errMsg string) {
+func (a *App) renderPublicForm(ctx context.Context, w http.ResponseWriter, cfg PublicConfig, srv *Server, errMsg string) {
 	q, tok := a.newChallenge()
+	used, remaining, full := a.publicQuota(ctx, cfg)
 	a.render(w, "public.html", map[string]any{
 		"Cfg": cfg, "Server": srv, "Open": true,
 		"Challenge": q, "ChallengeToken": tok, "Error": errMsg,
+		"Limited": cfg.MaxAccounts > 0, "Used": used, "Remaining": remaining, "Full": full,
 	})
 }
 
@@ -430,7 +452,7 @@ func (a *App) handleRoot(w http.ResponseWriter, r *http.Request) {
 	// The homepage is always the public face — never force a login here.
 	if open {
 		srv, _ := a.tut.GetServer(r.Context(), cfg.ServerID)
-		a.renderPublicForm(w, cfg, srv, "")
+		a.renderPublicForm(r.Context(), w, cfg, srv, "")
 		return
 	}
 	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Open": false})
@@ -446,11 +468,16 @@ func (a *App) handleFreeCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Anti-bot challenge — verify before doing any work.
 	if !a.verifyChallenge(r.FormValue("challenge_token"), r.FormValue("challenge_answer")) {
-		a.renderPublicForm(w, cfg, srv, "Verification failed — please answer the question and try again.")
+		a.renderPublicForm(r.Context(), w, cfg, srv, "Verification failed — please answer the question and try again.")
+		return
+	}
+	// Account quota — stop when the server is full.
+	if _, _, full := a.publicQuota(r.Context(), cfg); full {
+		a.renderPublicForm(r.Context(), w, cfg, srv, "All free slots are currently in use. Please check back later.")
 		return
 	}
 	if !a.ipAllow(clientIP(r), cfg.PerIPDaily) {
-		a.renderPublicForm(w, cfg, srv, "Daily limit reached from your network. Try again tomorrow.")
+		a.renderPublicForm(r.Context(), w, cfg, srv, "Daily limit reached from your network. Try again tomorrow.")
 		return
 	}
 	user, err := a.tut.CreateUser(r.Context(), cfg.ServerID, CreateUserReq{
@@ -460,7 +487,7 @@ func (a *App) handleFreeCreate(w http.ResponseWriter, r *http.Request) {
 		MaxLogins: cfg.MaxLogins,
 	})
 	if err != nil {
-		a.renderPublicForm(w, cfg, srv, err.Error())
+		a.renderPublicForm(r.Context(), w, cfg, srv, err.Error())
 		return
 	}
 	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Open": true, "Created": user})

@@ -14,12 +14,15 @@ type PublicConfig struct {
 	ServerID  int  `json:"server_id"`  // which server free accounts are created on
 	Days      int  `json:"days"`       // account lifetime
 	MaxLogins int  `json:"max_logins"` // simultaneous logins per account
+	// Total number of free accounts allowed on the server (0 = unlimited). When
+	// reached, the public page stops accepting new sign-ups.
+	MaxAccounts int `json:"max_accounts"`
 	// Simple abuse guard: max accounts a single IP can create per day.
 	PerIPDaily int `json:"per_ip_daily"`
 }
 
 func defaultPublicConfig() PublicConfig {
-	return PublicConfig{Enabled: false, ServerID: 0, Days: 7, MaxLogins: 1, PerIPDaily: 2}
+	return PublicConfig{Enabled: false, ServerID: 0, Days: 7, MaxLogins: 1, MaxAccounts: 0, PerIPDaily: 2}
 }
 
 // Store persists PublicConfig to a JSON file on the data volume.

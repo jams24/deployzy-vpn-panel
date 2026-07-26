@@ -93,7 +93,7 @@
     <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
       <div>
         {{if .Public.Enabled}}<span class="chip ok">Live</span>{{else}}<span class="chip">Off</span>{{end}}
-        <span class="muted fs13">&nbsp; Server #{{.Public.ServerID}} · {{.Public.Days}} days · {{.Public.MaxLogins}} logins · {{.Public.PerIPDaily}}/IP daily</span>
+        <span class="muted fs13">&nbsp; Server #{{.Public.ServerID}} · {{if .Public.MaxAccounts}}{{.Public.MaxAccounts}} accounts{{else}}unlimited{{end}} · {{.Public.Days}} days · {{.Public.MaxLogins}} logins · {{.Public.PerIPDaily}}/IP daily</span>
       </div>
       <a class="btn ghost sm" href="/admin/public">Configure</a>
     </div>
