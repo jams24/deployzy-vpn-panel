@@ -105,6 +105,7 @@ func main() {
 
 	// Public
 	mux.HandleFunc("GET /", app.handleRoot)
+	mux.HandleFunc("GET /create", app.handleCreatePage)
 	mux.HandleFunc("POST /free", app.handleFreeCreate)
 
 	// Auth
@@ -417,11 +418,38 @@ func (a *App) verifyChallenge(token, answer string) bool {
 
 // publicQuota reports how the server's account count sits against the configured
 // MaxAccounts cap. When MaxAccounts is 0 the offering is unlimited.
-func (a *App) publicQuota(ctx context.Context, cfg PublicConfig) (used, remaining int, full bool) {
+func isServerReady(status string) bool {
+	return status == "completed" || status == "ready" || status == "success"
+}
+
+// readyServers returns the caller's public-facing (ready) servers.
+func (a *App) readyServers(ctx context.Context) []Server {
+	all, _ := a.tut.ListServers(ctx)
+	out := make([]Server, 0, len(all))
+	for _, s := range all {
+		if isServerReady(s.ProvisionStatus) {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+func (a *App) findReadyServer(ctx context.Context, id int) *Server {
+	for _, s := range a.readyServers(ctx) {
+		if s.ID == id {
+			cp := s
+			return &cp
+		}
+	}
+	return nil
+}
+
+// serverQuota reports the account count on a specific server vs the cap.
+func (a *App) serverQuota(ctx context.Context, serverID int, cfg PublicConfig) (used, remaining int, full bool) {
 	if cfg.MaxAccounts <= 0 {
 		return 0, 0, false
 	}
-	users, _ := a.tut.ListUsers(ctx, cfg.ServerID)
+	users, _ := a.tut.ListUsers(ctx, serverID)
 	used = len(users)
 	remaining = cfg.MaxAccounts - used
 	if remaining < 0 {
@@ -430,64 +458,100 @@ func (a *App) publicQuota(ctx context.Context, cfg PublicConfig) (used, remainin
 	return used, remaining, used >= cfg.MaxAccounts
 }
 
-// renderPublicForm renders the public landing with a fresh challenge (and an
-// optional error), so every form render gets a new, unused challenge.
-func (a *App) renderPublicForm(ctx context.Context, w http.ResponseWriter, cfg PublicConfig, srv *Server, errMsg string) {
+// ServerCard bundles a server with its live quota state for the public grid.
+type ServerCard struct {
+	Server    Server
+	Limited   bool
+	Used      int
+	Remaining int
+	Full      bool
+}
+
+// renderCreateForm renders the per-server create page with a fresh challenge.
+func (a *App) renderCreateForm(ctx context.Context, w http.ResponseWriter, cfg PublicConfig, srv *Server, errMsg string) {
 	q, tok := a.newChallenge()
-	used, remaining, full := a.publicQuota(ctx, cfg)
+	used, remaining, full := a.serverQuota(ctx, srv.ID, cfg)
 	a.render(w, "public.html", map[string]any{
-		"Cfg": cfg, "Server": srv, "Open": true,
+		"Cfg": cfg, "CreateServer": srv, "Open": true,
 		"Challenge": q, "ChallengeToken": tok, "Error": errMsg,
 		"Limited": cfg.MaxAccounts > 0, "Used": used, "Remaining": remaining, "Full": full,
 	})
 }
 
+// handleRoot renders the public grid of all ready servers.
 func (a *App) handleRoot(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
 	}
 	cfg := a.store.Public()
-	open := cfg.Enabled && cfg.ServerID != 0
-	// The homepage is always the public face — never force a login here.
-	if open {
-		srv, _ := a.tut.GetServer(r.Context(), cfg.ServerID)
-		a.renderPublicForm(r.Context(), w, cfg, srv, "")
+	if !cfg.Enabled {
+		a.render(w, "public.html", map[string]any{"Cfg": cfg, "Open": false})
 		return
 	}
-	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Open": false})
+	servers := a.readyServers(r.Context())
+	if len(servers) == 0 {
+		a.render(w, "public.html", map[string]any{"Cfg": cfg, "Open": false})
+		return
+	}
+	cards := make([]ServerCard, 0, len(servers))
+	for _, s := range servers {
+		used, remaining, full := a.serverQuota(r.Context(), s.ID, cfg)
+		cards = append(cards, ServerCard{Server: s, Limited: cfg.MaxAccounts > 0, Used: used, Remaining: remaining, Full: full})
+	}
+	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Open": true, "Cards": cards})
+}
+
+// handleCreatePage renders the create form for one server (?server=ID).
+func (a *App) handleCreatePage(w http.ResponseWriter, r *http.Request) {
+	cfg := a.store.Public()
+	if !cfg.Enabled {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	id, _ := strconv.Atoi(r.URL.Query().Get("server"))
+	srv := a.findReadyServer(r.Context(), id)
+	if srv == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	a.renderCreateForm(r.Context(), w, cfg, srv, "")
 }
 
 func (a *App) handleFreeCreate(w http.ResponseWriter, r *http.Request) {
 	cfg := a.store.Public()
-	if !cfg.Enabled || cfg.ServerID == 0 {
+	if !cfg.Enabled {
 		http.Error(w, "Free accounts are not available.", 403)
 		return
 	}
-	srv, _ := a.tut.GetServer(r.Context(), cfg.ServerID)
+	id, _ := strconv.Atoi(r.FormValue("server_id"))
+	srv := a.findReadyServer(r.Context(), id)
+	if srv == nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
 
 	// Anti-bot challenge — verify before doing any work.
 	if !a.verifyChallenge(r.FormValue("challenge_token"), r.FormValue("challenge_answer")) {
-		a.renderPublicForm(r.Context(), w, cfg, srv, "Verification failed — please answer the question and try again.")
+		a.renderCreateForm(r.Context(), w, cfg, srv, "Verification failed — please answer the question and try again.")
 		return
 	}
-	// Account quota — stop when the server is full.
-	if _, _, full := a.publicQuota(r.Context(), cfg); full {
-		a.renderPublicForm(r.Context(), w, cfg, srv, "All free slots are currently in use. Please check back later.")
+	if _, _, full := a.serverQuota(r.Context(), srv.ID, cfg); full {
+		a.renderCreateForm(r.Context(), w, cfg, srv, "All free slots are currently in use. Please check back later.")
 		return
 	}
 	if !a.ipAllow(clientIP(r), cfg.PerIPDaily) {
-		a.renderPublicForm(r.Context(), w, cfg, srv, "Daily limit reached from your network. Try again tomorrow.")
+		a.renderCreateForm(r.Context(), w, cfg, srv, "Daily limit reached from your network. Try again tomorrow.")
 		return
 	}
-	user, err := a.tut.CreateUser(r.Context(), cfg.ServerID, CreateUserReq{
+	user, err := a.tut.CreateUser(r.Context(), srv.ID, CreateUserReq{
 		Username:  strings.TrimSpace(r.FormValue("username")),
 		Password:  r.FormValue("password"),
 		Days:      cfg.Days,
 		MaxLogins: cfg.MaxLogins,
 	})
 	if err != nil {
-		a.renderPublicForm(r.Context(), w, cfg, srv, err.Error())
+		a.renderCreateForm(r.Context(), w, cfg, srv, err.Error())
 		return
 	}
 	a.render(w, "public.html", map[string]any{"Cfg": cfg, "Server": srv, "Open": true, "Created": user})

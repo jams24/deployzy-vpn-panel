@@ -17,13 +17,8 @@
           <input type="checkbox" name="enabled" {{if .Cfg.Enabled}}checked{{end}} style="width:auto">
           <span>Enable the public page at your panel's homepage</span>
         </label>
-        <label>Server for free accounts</label>
-        <select name="server_id">
-          <option value="0">— select a server —</option>
-          {{range .Servers}}
-          <option value="{{.ID}}" {{if eq .ID $.Cfg.ServerID}}selected{{end}}>{{.Label}} ({{if .IP}}{{.IP}}{{else}}{{.Host}}{{end}})</option>
-          {{end}}
-        </select>
+        <input type="hidden" name="server_id" value="{{.Cfg.ServerID}}">
+        <p class="muted fs12" style="margin-top:6px">All of your <strong>{{len .Servers}}</strong> ready server(s) appear as a grid on the public page. The limits below apply to each server.</p>
         <div class="grid g2">
           <div><label>Total accounts allowed <span class="muted">(0 = unlimited)</span></label><input name="max_accounts" type="number" min="0" value="{{.Cfg.MaxAccounts}}"></div>
           <div><label>Days per account</label><input name="days" type="number" min="1" value="{{.Cfg.Days}}"></div>
@@ -32,7 +27,7 @@
           <div><label>Max logins per account</label><input name="max_logins" type="number" min="1" value="{{.Cfg.MaxLogins}}"></div>
           <div><label>New accounts per IP / day</label><input name="per_ip_daily" type="number" min="1" value="{{.Cfg.PerIPDaily}}"></div>
         </div>
-        <p class="muted fs12" style="margin-top:10px">Only servers you've installed appear above. Free accounts are created on that server. Set a total cap so the public page closes sign-ups once the server is full.</p>
+        <p class="muted fs12" style="margin-top:10px">Set a total cap (per server) so the public page closes sign-ups on a server once it's full. Install more servers to add them to the grid.</p>
         <button class="btn" type="submit" style="margin-top:6px">Save</button>
       </form>
     </div>
