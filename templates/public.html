@@ -58,9 +58,11 @@
 
   {{else if .CreateServer}}
   <!-- ===== Per-server create ===== -->
-  <div class="hero" style="padding-top:30px">
-    <a href="/" class="muted fs13" style="text-decoration:none">← All servers</a>
-    <h1 class="hero-t" style="font-size:clamp(26px,5vw,40px);margin-top:12px">Create your account</h1>
+  <div style="max-width:920px;margin:0 auto;padding:20px 22px 0;position:relative;z-index:2">
+    <a href="/" class="btn ghost sm" style="text-decoration:none;display:inline-flex">← All servers</a>
+  </div>
+  <div class="hero" style="padding-top:18px">
+    <h1 class="hero-t" style="font-size:clamp(26px,5vw,40px);margin-top:0">Create your account</h1>
     <p class="hero-p">on <strong style="color:var(--text)">{{.CreateServer.Label}}</strong> · valid {{.Cfg.Days}} days · up to {{.Cfg.MaxLogins}} login(s)</p>
     {{if .Limited}}<p class="muted fs13" style="margin-top:8px">{{if .Full}}<span style="color:var(--bad);font-weight:600">Fully booked</span>{{else}}<span style="color:var(--ok);font-weight:600">{{.Remaining}}</span> of {{.Cfg.MaxAccounts}} accounts remaining{{end}}</p>{{end}}
   </div>
